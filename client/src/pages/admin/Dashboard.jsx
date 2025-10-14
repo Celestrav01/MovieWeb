@@ -13,16 +13,20 @@ import { useEffect, useState } from 'react';
 import Title from '../../components/admin/Title'
 import BlurCircle from '../../components/BlurCircle'
 import dateFormat from '../../lib/dateFormat'
+import { useAppContext } from '../../context/AppContext';
+import toast from 'react-hot-toast';
 
 
 const Dashboard = () => {
 
   const currency = import.meta.env.VITE_CURRENCY;
 
-  const [dashboardData, setDashboardData] = useState({
-    totalBookings: 0,
-    totalRevenue: 0,
+   const {axios, getToken, user,image_base_url} = useAppContext();
+  
 
+  const [dashboardData, setDashboardData] = useState({
+    tottalBookings: 0,
+    totalRevenue: 0,
     activeShows: [],
     totalUser: 0
   });
@@ -31,7 +35,7 @@ const Dashboard = () => {
 
   const dashboardCards = [
     { title: "Total Bookings", 
-      value: dashboardData.totalBookings || "0", 
+      value: dashboardData.tottalBookings || "0", 
       icon: ChartLineIcon 
     },
 
@@ -53,13 +57,26 @@ const Dashboard = () => {
   ]
 
   const fetchDashboardData = async () => {
-    setDashboardData(dummyDashboardData)
-    setLoading(false)
+    try {
+      const {data} = await axios.get("/api/admin/dashboard", { headers: {Authorization: `Bearer ${await getToken()}` }})
+      console.log(data)
+      if(data.success){
+        setDashboardData(data.dasboardData)
+        setLoading(false)
+      }else{
+        toast.error(data.message)
+      }
+
+    } catch (error) {
+      toast.error("Error Fetching dashboard data:", error)
+    }
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if(user){
+      fetchDashboardData();
+    }
+  }, [user]);
 
 
 
@@ -85,7 +102,7 @@ const Dashboard = () => {
           <BlurCircle top='100px' left='-10%'/>
           {dashboardData.activeShows.map((show) =>(
             <div key={show._id} className='w-[calc(25%-18px)] rounded-lg overflow-hidden h-full pb-3 bg-primary/10 border border-primary/20 hover:-translate-y-1 transition duration-300'>
-              <img src={show.movie.poster_path} alt="" className='h-55 w-full object-cover'/>
+              <img src={image_base_url + show.movie.poster_path} alt="" className='h-55 w-full object-cover'/>
               <p className='font-medium p-2 truncate'>{show.movie.title}</p>
               <div className='flex items-center justify-between px-2'>
                 <p className='text-lg font-medium'>{currency} {show.showPrice}</p>

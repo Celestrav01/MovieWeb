@@ -4,8 +4,11 @@ import BlurCircle from './BlurCircle'
 import { dummyShowsData } from '../assets/assets'
 import MovieCard from './MovieCard'
 
+import {useAppContext} from '../context/AppContext'
+
 const FeaturedSection = () => {
   const navigate = useNavigate()
+  const {shows} = useAppContext()
 
   return (
     <div className="px-6 md:px-16 lg:px-24 xl:px-44 overflow-hidden">
@@ -24,7 +27,7 @@ const FeaturedSection = () => {
 
       {/* Cards Section */}
       <div className="flex justify-between mt-8">
-        {dummyShowsData.slice(0, 4).map((show) => (
+        {shows.slice(0, 4).map((show) => (
           <div key={show._id} className="w-[23%]">
             <MovieCard movie={show} />
           </div>

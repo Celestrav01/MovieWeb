@@ -220,7 +220,7 @@ export const dummyDateTimeData = {
 }
 
 export const dummyDashboardData = {
-    "totalBookings": 14,
+    "tottalBookings": 14,
     "totalRevenue": 1517,
     "totalUser": 5,
     "activeShows": [
