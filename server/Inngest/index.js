@@ -126,7 +126,7 @@ const sendShowReminders = inngest.createFunction(
         // prepare reminer tasks
         const reminderTasks = await step.run("prepare-reminder-tasks", async ()=>{
             const shows = await Show.find({
-                showTime: {$gte :windowStart, $lte: in8Hours},
+                showDateTime: {$gte :windowStart, $lte: in8Hours},
             }).populate('movie');
 
             const tasks = [];
@@ -141,10 +141,10 @@ const sendShowReminders = inngest.createFunction(
 
                 for(const user of users){
                     tasks.push({
-                        userEmail : user.enail,
+                        userEmail : user.email,
                         userName : user.name,
                         movieTitle : show.movie.title,
-                        showTime : show.showTime,
+                        showTime : show.showDateTime,
                     })
                 }
             }
@@ -158,28 +158,34 @@ const sendShowReminders = inngest.createFunction(
         // Send reminder emails
         const results =  await step.run('send-all-reminders',async ()=>{
             return await Promise.allSettled(
-                reminderTasks.map(task => sendEmail({
-                    to: task.userEmail,
-                    subject: `Reminder: your movie "${task.movieTitle}" starts soon!`,
-                    body: ` <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <div style="background-color: #7b2cbf; color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0;">🎟️ QuickShow Booking Confirmed!</h1>
-          </div>
-
-          <div style="padding: 24px; font-size: 16px; color: #333;">
-            <h2 style="margin-top: 0;">Hi ${booking.user.name},</h2>
-            <p>Your booking for <strong style="color: #7b2cbf;">"${booking.show.movie.title}"</strong> is confirmed.</p>
-
-            <p>
-              <strong>Date:</strong> ${showDate}<br>
-              <strong>Time:</strong> ${showTime}
-            </p>
-            <p><strong>Booking ID:</strong> <span style="color: #7b2cbf;">${booking._id}</span></p>
-            <p><strong>Seats:</strong> ${booking.bookedSeats?.join(', ') || 'N/A'}</p>
-
-            <p>🎬 Enjoy the show and don’t forget to grab your popcorn!</p>
-          </div>`
-                }))
+                reminderTasks.map(task => {
+                    const reminderDate = new Date(task.showTime).toLocaleDateString('en-IN', {
+                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Kolkata'
+                    });
+                    const reminderTime = new Date(task.showTime).toLocaleTimeString('en-IN', {
+                        hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
+                    });
+                    
+                    return sendEmail({
+                        to: task.userEmail,
+                        subject: `Reminder: your movie "${task.movieTitle}" starts soon!`,
+                        body: ` <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="background-color: #7b2cbf; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0;">⏰ QuickShow Reminder!</h1>
+              </div>
+    
+              <div style="padding: 24px; font-size: 16px; color: #333;">
+                <h2 style="margin-top: 0;">Hi ${task.userName},</h2>
+                <p>Your movie <strong style="color: #7b2cbf;">"${task.movieTitle}"</strong> is starting soon!</p>
+    
+                <p>
+                  <strong>Date:</strong> ${reminderDate}<br>
+                  <strong>Time:</strong> ${reminderTime}
+                </p>
+                <p>Please arrive on time to enjoy the show!</p>
+              </div>`
+                    })
+                })
             )
         })
 
@@ -220,10 +226,10 @@ const sendNewMovieEmail = inngest.createFunction(
             <div style="padding: 24px; color: #333;">
                 <h2 style="margin-top: 0;">"${movieTitle}" is Now Available on QuickShow!</h2>
                 <p><strong>Release Date:</strong> ${movie.release_date}</p>
-                <p><strong>Genre:</strong> ${movie.genres.map((genre) => genre).join(', ')}</p>
-                <p>${movie.description}</p>
+                <p><strong>Genre:</strong> ${movie.genres.map((genre) => genre.name).join(', ')}</p>
+                <p>${movie.overview}</p>
 
-                <img src="${movie.primaryImage}" alt="${movieTitle  } Poster" style="width: 100%; max-height: 350px; object-fit: cover; border-radius: 4px; margin-top: 16px;" />
+                <img src="${movie.backdrop_path}" alt="${movieTitle  } Poster" style="width: 100%; max-height: 350px; object-fit: cover; border-radius: 4px; margin-top: 16px;" />
 
                 <div style="margin-top: 20px; text-align: center;">
                 <a href="https://quickshow-ecru.vercel.app/movies/${movieId}" style="background-color: #7b2cbf; color: white; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">🎟️ Book Your Tickets</a>
