@@ -63,7 +63,7 @@ export const createbooking = async (req,res)=>{
         // creating line items for stripe 
         const line_items = [{
             price_data : {
-                currency : 'usd',
+                currency : 'inr',
                 product_data: {
                    name :  showData.movie.title
                 },
