@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
 import sendEmail from "../configs/nodeMailer.js";
+import Movie from "../models/Movie.js";
 
 export const inngest = new Inngest({ id: "movie-ticket-booking" });
 
@@ -78,7 +79,7 @@ const sendBookingConfirmationEmail = inngest.createFunction (
 
         const booking = await Booking.findById(bookingId).populate({
             path : 'show',
-            populate : {path: "movie", model: "movie"}
+            populate : {path: "movie", model: "Movie"}
         }).populate('user');
 
         const showDate = new Date(booking.show.showDateTime).toLocaleDateString('en-IN', {
