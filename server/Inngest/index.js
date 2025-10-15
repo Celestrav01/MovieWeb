@@ -76,7 +76,7 @@ const sendBookingConfirmationEmail = inngest.createFunction (
     {event: "app/show.booked"},
     async ({event,step})=>{
         const {bookingId} = event.data;
-        console(booking.user);
+
         const booking = await Booking.findById(bookingId).populate({
             path : 'show',
             populate : {path: "movie", model: "Movie"}
