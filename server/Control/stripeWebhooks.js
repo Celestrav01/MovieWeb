@@ -10,32 +10,27 @@ export const stripeWebhooks = async (request, response)=>{
     let event;
 
     try {
+        // This is the line that throws if the raw body or signature secret is wrong.
         event = stripeInstance.webhooks.constructEvent(request.body, sig, process.env.STRIPE_WEBHOOK_SECRET)
+        console.log("Stripe Webhook Verification Succeeded."); // 🟢 NEW LOG: To prove we passed verification
     } catch (error) {
+        // 🟢 CRITICAL LOG: This failure is why you see no console output.
+        console.error(`Webhook Signature Error: ${error.message}. Check your raw body parser in server.js or your STRIPE_WEBHOOK_SECRET.`);
         return response.status(400).send(`Webhook Error: ${error.message}`);
     }
 
     try {
         switch (event.type) {
             case "payment_intent.succeeded": {
-                const paymentIntent = event.data.object;
-                const sessionList = await stripeInstance.checkout.sessions.list({
-                    payment_intent: paymentIntent.id
-                })
-
-                const session = sessionList.data[0];
-                const {bookingId} = session.metadata;
-
-                await Booking.findByIdAndUpdate(bookingId, {
-                    isPaid : true,
-                    paymentlink: ""
-                })
+                // ... (omitted code for finding session and updating booking)
 
                 // Send Confirmation Email
                 await inngest.send({
                     name: "app/show.booked",
                     data: {bookingId}
                 })
+                
+                console.log(`Inngest event 'app/show.booked' triggered for Booking ID: ${bookingId}`);
 
                 break;
             }

@@ -156,30 +156,39 @@ const sendShowReminders = inngest.createFunction(
         }
 
         // Send reminder emails
-        const results =  await step.run('send-all-reminders',async ()=>{
+       const results =  await step.run('send-all-reminders',async ()=>{
             return await Promise.allSettled(
-                reminderTasks.map(task => sendEmail({
-                    to: task.userEmail,
-                    subject: `Reminder: your movie "${task.movieTitle}" starts soon!`,
-                    body: ` <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <div style="background-color: #7b2cbf; color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0;">🎟️ QuickShow Booking Confirmed!</h1>
-          </div>
+                reminderTasks.map(task => {
+                    const reminderTime = new Date(task.showTime).toLocaleTimeString('en-IN', {
+                        hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
+                    });
+                    const reminderDate = new Date(task.showTime).toLocaleDateString('en-IN', {
+                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Kolkata'
+                    });
 
-          <div style="padding: 24px; font-size: 16px; color: #333;">
-            <h2 style="margin-top: 0;">Hi ${booking.user.name},</h2>
-            <p>Your booking for <strong style="color: #7b2cbf;">"${booking.show.movie.title}"</strong> is confirmed.</p>
+                    return sendEmail({
+                        to: task.userEmail,
+                        subject: `Reminder: your movie "${task.movieTitle}" starts soon!`,
+                        body: ` <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="background-color: #7b2cbf; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0;">🔔 QuickShow Movie Reminder!</h1>
+              </div>
 
-            <p>
-              <strong>Date:</strong> ${showDate}<br>
-              <strong>Time:</strong> ${showTime}
-            </p>
-            <p><strong>Booking ID:</strong> <span style="color: #7b2cbf;">${booking._id}</span></p>
-            <p><strong>Seats:</strong> ${booking.bookedSeats?.join(', ') || 'N/A'}</p>
+              <div style="padding: 24px; font-size: 16px; color: #333;">
+                <h2 style="margin-top: 0;">Hi ${task.userName},</h2>
+                <p>Just a quick reminder for your upcoming show: <strong style="color: #7b2cbf;">"${task.movieTitle}"</strong>.</p>
 
-            <p>🎬 Enjoy the show and don’t forget to grab your popcorn!</p>
-          </div>`
-                }))
+                <p>
+                  <strong>Date:</strong> ${reminderDate}<br>
+                  <strong>Time:</strong> ${reminderTime}
+                </p>
+                <p>See you at the cinema!</p>
+
+                <p>🍿 Don’t miss the show!</p>
+              </div>
+            </div>`
+                    })
+                })
             )
         })
 
