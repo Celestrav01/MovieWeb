@@ -12,7 +12,7 @@ export const stripeWebhooks = async (request, response)=>{
     try {
         // This is the line that throws if the raw body or signature secret is wrong.
         event = stripeInstance.webhooks.constructEvent(request.body, sig, process.env.STRIPE_WEBHOOK_SECRET)
-        console.log("Stripe Webhook Verification Succeeded."); 
+        console.log("Stripe Webhook Verification Succeeded."); // 🟢 NEW LOG: To prove we passed verification
     } catch (error) {
         // 🟢 CRITICAL LOG: This failure is why you see no console output.
         console.error(`Webhook Signature Error: ${error.message}. Check your raw body parser in server.js or your STRIPE_WEBHOOK_SECRET.`);
@@ -21,34 +21,17 @@ export const stripeWebhooks = async (request, response)=>{
 
     try {
         switch (event.type) {
-            case "checkout.session.completed": 
             case "payment_intent.succeeded": {
-                // 🟢 NEW CODE: Logic to retrieve bookingId and update payment status
-                const session = event.data.object;
-                const bookingId = session.metadata.bookingId;
+                // ... (omitted code for finding session and updating booking)
 
-                if (bookingId) {
-                    const booking = await Booking.findById(bookingId);
-                    if (booking) {
-                        booking.isPaid = true;
-                        await booking.save();
-                        console.log(`Booking ${bookingId} marked as paid.`);
-                        
-                        // Send Confirmation Email
-                        await inngest.send({
-                            name: "app/show.booked",
-                            data: {bookingId}
-                        })
-                        
-                        console.log(`Inngest event 'app/show.booked' triggered for Booking ID: ${bookingId}`);
-
-                    } else {
-                        console.log(`Booking ID ${bookingId} not found.`);
-                    }
-                } else {
-                    console.log('No bookingId found in metadata for session:', session.id);
-                }
+                // Send Confirmation Email
+                await inngest.send({
+                    name: "app/show.booked",
+                    data: {bookingId}
+                })
                 
+                console.log(`Inngest event 'app/show.booked' triggered for Booking ID: ${bookingId}`);
+
                 break;
             }
                 
