@@ -20,7 +20,7 @@ const syncUserCreation = inngest.createFunction(
         }
         await User.create(userData)
     } 
-); 
+);
 
 const syncUserDeletion = inngest.createFunction(
     { id: 'delete-user-with-clerk' },
@@ -30,7 +30,7 @@ const syncUserDeletion = inngest.createFunction(
       
         await User.findByIdAndDelete(id)
     } 
-); 
+);
 
 const syncUserUpdation = inngest.createFunction(
     { id: 'update-user-from-clerk' },
@@ -51,7 +51,7 @@ const releaseSeatsAndDeleteBooking = inngest.createFunction(
     {id: 'release-seats-delete-booking'},
     {event : "app/checkpayment"},
     async({ event,step })=>{
-        const tenMinutesLater = new Date(Date.now() + 10 * 60 * 60 * 1000);
+        const tenMinutesLater = new Date(Date.now() + 10 * 60 * 1000);
         await step.sleepUntil('Wait-for-10-minutes',tenMinutesLater)
 
         await step.run('check-payment-status', async ()=>{
@@ -108,7 +108,7 @@ const sendBookingConfirmationEmail = inngest.createFunction (
             <p><strong>Booking ID:</strong> <span style="color: #7b2cbf;">${booking._id}</span></p>
             <p><strong>Seats:</strong> ${booking.bookedSeats?.join(', ') || 'N/A'}</p>
 
-            <p>🎬 Enjoy the show and don’t forget to grab your popcorn!</p>
+            <p>🎬 Enjoy the show and don't forget to grab your popcorn!</p>
           </div>`
         })
     }
@@ -177,7 +177,7 @@ const sendShowReminders = inngest.createFunction(
             <p><strong>Booking ID:</strong> <span style="color: #7b2cbf;">${booking._id}</span></p>
             <p><strong>Seats:</strong> ${booking.bookedSeats?.join(', ') || 'N/A'}</p>
 
-            <p>🎬 Enjoy the show and don’t forget to grab your popcorn!</p>
+            <p>🎬 Enjoy the show and don't forget to grab your popcorn!</p>
           </div>`
                 }))
             )
