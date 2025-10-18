@@ -68,7 +68,7 @@ export const createbooking = async (req, res) => {
                 bookingId: booking._id.toString()
             },
             customer_email: booking.user.email,
-            billing_address_collection: 'required', // 🟢 THIS WILL COLLECT NAME
+            // 🟢 REMOVED ONLY billing_address_collection
             expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
         });
 

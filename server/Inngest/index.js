@@ -86,9 +86,21 @@ const sendBookingConfirmationEmail = inngest.createFunction(
             return;
         }
 
-        // 🟢 USE CUSTOMER NAME FROM STRIPE, FALLBACK TO DATABASE NAME
+        // 🟢 USE CUSTOMER EMAIL FROM STRIPE, FALLBACK TO DATABASE EMAIL
         const recipientEmail = customerEmail || booking.user.email;
-        const recipientName = customerName || booking.user.name; // 🟢 USE CUSTOMER NAME
+        
+        // 🟢 USE CUSTOMER NAME FROM STRIPE, EXTRACT FROM EMAIL, OR USE DATABASE NAME
+        let recipientName = customerName;
+        
+        if (!recipientName && customerEmail) {
+            // Extract name from email (e.g., "john.doe@gmail.com" -> "John")
+            recipientName = customerEmail.split('@')[0];
+            recipientName = recipientName.split('.')[0];
+            recipientName = recipientName.charAt(0).toUpperCase() + recipientName.slice(1);
+        }
+        
+        // Final fallback to database name
+        recipientName = recipientName || booking.user.name || "Valued Customer";
 
         const showDate = new Date(booking.show.showDateTime).toLocaleDateString('en-IN', {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Kolkata'
@@ -106,7 +118,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
           </div>
 
           <div style="padding: 24px; font-size: 16px; color: #333;">
-            <h2 style="margin-top: 0;">Hi ${recipientName},</h2> <!-- 🟢 USE RECIPIENT NAME -->
+            <h2 style="margin-top: 0;">Hi ${recipientName},</h2> <!-- 🟢 USE DYNAMIC NAME -->
             <p>Your booking for <strong style="color: #7b2cbf;">"${booking.show.movie.title}"</strong> is confirmed.</p>
 
             <p>
@@ -115,9 +127,15 @@ const sendBookingConfirmationEmail = inngest.createFunction(
             </p>
             <p><strong>Booking ID:</strong> <span style="color: #7b2cbf;">${booking._id}</span></p>
             <p><strong>Seats:</strong> ${booking.bookedSeats?.join(', ') || 'N/A'}</p>
+            <p><strong>Amount Paid:</strong> ₹${booking.amount}</p>
 
             <p>🎬 Enjoy the show and don't forget to grab your popcorn!</p>
-          </div>`
+          </div>
+
+          <div style="background-color: #f5f5f5; padding: 16px; text-align: center; color: #666;">
+            <p style="margin: 0;">Thank you for choosing QuickShow!</p>
+          </div>
+        </div>`
         });
     }
 );
