@@ -75,13 +75,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
     { id: "send-booking-confirmation-email" },
     { event: "app/show.booked" },
     async ({ event, step }) => {
-        const { bookingId, customerEmail } = event.data;
-
-        // 🟢 ADD THESE LOGS AT THE BEGINNING OF THE FUNCTION
-        console.log("🔍 INNGEST EMAIL FUNCTION DEBUG:");
-        console.log("   Event received:", event.name);
-        console.log("   Booking ID from event:", bookingId);
-        console.log("   Customer Email from event:", customerEmail);
+        const { bookingId, customerEmail, customerName } = event.data;
 
         const booking = await Booking.findById(bookingId).populate({
             path: 'show',
@@ -89,19 +83,12 @@ const sendBookingConfirmationEmail = inngest.createFunction(
         }).populate('user');
 
         if (!booking) {
-            console.log("❌ Booking not found in database");
             return;
         }
 
-        // 🟢 ADD MORE DEBUGGING LOGS
-        console.log("   User email from database:", booking.user.email);
-        console.log("   User name from database:", booking.user.name);
-        
-        // 🟢 DECISION LOGIC WITH LOGGING
+        // 🟢 USE CUSTOMER NAME FROM STRIPE, FALLBACK TO DATABASE NAME
         const recipientEmail = customerEmail || booking.user.email;
-        console.log("   Final recipient email decision:", recipientEmail);
-        console.log("   Using customerEmail from Stripe?", !!customerEmail);
-        console.log("   Using user email from database?", !customerEmail);
+        const recipientName = customerName || booking.user.name; // 🟢 USE CUSTOMER NAME
 
         const showDate = new Date(booking.show.showDateTime).toLocaleDateString('en-IN', {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Kolkata'
@@ -109,12 +96,6 @@ const sendBookingConfirmationEmail = inngest.createFunction(
         const showTime = new Date(booking.show.showDateTime).toLocaleTimeString('en-IN', {
             hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
         });
-
-        // 🟢 LOG BEFORE SENDING EMAIL
-        console.log("📧 Preparing to send email to:", recipientEmail);
-        console.log("   Movie:", booking.show.movie.title);
-        console.log("   Show Date:", showDate);
-        console.log("   Show Time:", showTime);
 
         await sendEmail({
             to: recipientEmail,
@@ -125,7 +106,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
           </div>
 
           <div style="padding: 24px; font-size: 16px; color: #333;">
-            <h2 style="margin-top: 0;">Hi ${booking.user.name},</h2>
+            <h2 style="margin-top: 0;">Hi ${recipientName},</h2> <!-- 🟢 USE RECIPIENT NAME -->
             <p>Your booking for <strong style="color: #7b2cbf;">"${booking.show.movie.title}"</strong> is confirmed.</p>
 
             <p>
@@ -137,12 +118,9 @@ const sendBookingConfirmationEmail = inngest.createFunction(
 
             <p>🎬 Enjoy the show and don't forget to grab your popcorn!</p>
           </div>`
-        })
-
-        // 🟢 LOG AFTER SENDING EMAIL
-        console.log("✅ Email sent successfully to:", recipientEmail);
+        });
     }
-)
+);
 
 // const sendBookingConfirmationEmail = inngest.createFunction (
 //     {id:"send-booking-confirmation-email"},
