@@ -1,3 +1,4 @@
+// Updated nodeMailer.js with debugging
 import nodemailer from 'nodemailer'
 
 const transporter = nodemailer.createTransport({
@@ -9,15 +10,28 @@ const transporter = nodemailer.createTransport({
   },
 }); 
 
-const sendEmail = async ({ to,subject,body})=>{
-     
-    const response = await transporter.sendMail({
-        from: process.env.SENDER_EMAIL,
-        to,
-        subject,
-        html:body,
-    })
-    return response;
+const sendEmail = async ({ to, subject, body }) => {
+    try {
+        console.log('📧 Attempting to send email:');
+        console.log('   From:', process.env.SENDER_EMAIL);
+        console.log('   To:', to);
+        console.log('   Subject:', subject);
+        
+        const mailOptions = {
+            from: process.env.SENDER_EMAIL,
+            to,
+            subject,
+            html: body,
+        };
+
+        const response = await transporter.sendMail(mailOptions);
+        
+        console.log('✅ Email sent successfully:', response.messageId);
+        return response;
+    } catch (error) {
+        console.error('❌ Email sending failed:', error);
+        throw error;
+    }
 }
 
 export default sendEmail;
