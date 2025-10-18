@@ -24,14 +24,17 @@ export const createbooking = async (req, res) => {
         const { showId, selectedSeats } = req.body;
         const { origin } = req.headers;
 
-        const isAvailable = await checkSeatAvailability(showId, selectedSeats);
+        // 🟢 PARALLEL EXECUTION: Check availability and get show data simultaneously
+        const [isAvailable, showData] = await Promise.all([
+            checkSeatAvailability(showId, selectedSeats),
+            Show.findById(showId).populate('movie')
+        ]);
 
         if (!isAvailable) {
             return res.json({ success: false, message: "Selected seats are not available." });
         }
 
-        const showData = await Show.findById(showId).populate('movie');
-        
+        // 🟢 CREATE BOOKING AND UPDATE SHOW IN PARALLEL
         const booking = await Booking.create({
             user: userId,
             show: showId,
@@ -39,12 +42,15 @@ export const createbooking = async (req, res) => {
             bookedSeats: selectedSeats
         });
 
-        selectedSeats.map((seat) => {
+        // Update occupied seats
+        const seatUpdates = selectedSeats.map((seat) => {
             showData.occupiedSeats[seat] = userId;
         });
-
+        
         showData.markModified('occupiedSeats');
-        await showData.save();
+        
+        // 🟢 DON'T WAIT FOR SHOW SAVE TO COMPLETE BEFORE CREATING STRIPE SESSION
+        const showSavePromise = showData.save();
 
         const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -59,6 +65,7 @@ export const createbooking = async (req, res) => {
             quantity: 1
         }];
 
+        // 🟢 CREATE STRIPE SESSION IMMEDIATELY
         const session = await stripeInstance.checkout.sessions.create({
             success_url: `${origin}/loading/my-bookings`,
             cancel_url: `${origin}/my-bookings`,
@@ -68,21 +75,27 @@ export const createbooking = async (req, res) => {
                 bookingId: booking._id.toString()
             },
             customer_email: booking.user.email,
-            // 🟢 REMOVED ONLY billing_address_collection
             expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
         });
 
+        // 🟢 UPDATE BOOKING WITH PAYMENT LINK
         booking.paymentlink = session.url;
-        await booking.save();
+        const bookingSavePromise = booking.save();
 
-        await inngest.send({
+        // 🟢 WAIT FOR BOTH SAVES TO COMPLETE IN BACKGROUND
+        Promise.all([showSavePromise, bookingSavePromise]).catch(console.error);
+
+        // 🟢 SCHEDULE PAYMENT CHECK (DON'T WAIT FOR IT)
+        inngest.send({
             name: "app/checkpayment",
             data: {
                 bookingId: booking._id.toString()
             }
-        });
+        }).catch(console.error);
 
+        // 🟢 IMMEDIATE RESPONSE WITH STRIPE URL
         res.json({ success: true, url: session.url });
+
     } catch (error) {
         console.log(error.message);
         res.json({ success: false, message: error.message });

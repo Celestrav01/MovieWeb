@@ -140,48 +140,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
     }
 );
 
-// const sendBookingConfirmationEmail = inngest.createFunction (
-//     {id:"send-booking-confirmation-email"},
-//     {event: "app/show.booked"},
-//     async ({event,step})=>{
-//         const {bookingId} = event.data;
 
-//         const booking = await Booking.findById(bookingId).populate({
-//             path : 'show',
-//             populate : {path: "movie", model: "Movie"}
-//         }).populate('user');
-
-//         const showDate = new Date(booking.show.showDateTime).toLocaleDateString('en-IN', {
-//             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Kolkata'
-//         });
-//         const showTime = new Date(booking.show.showDateTime).toLocaleTimeString('en-IN', {
-//             hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
-//         });
-
-//         await sendEmail({
-//             to: booking.user.email,
-//             subject: `Payment Confirmation: "${booking.show.movie.title}" booked`,
-//             body: ` <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-//           <div style="background-color: #7b2cbf; color: white; padding: 20px; text-align: center;">
-//             <h1 style="margin: 0;">🎟️ QuickShow Booking Confirmed!</h1>
-//           </div>
-
-//           <div style="padding: 24px; font-size: 16px; color: #333;">
-//             <h2 style="margin-top: 0;">Hi ${booking.user.name},</h2>
-//             <p>Your booking for <strong style="color: #7b2cbf;">"${booking.show.movie.title}"</strong> is confirmed.</p>
-
-//             <p>
-//               <strong>Date:</strong> ${showDate}<br>
-//               <strong>Time:</strong> ${showTime}
-//             </p>
-//             <p><strong>Booking ID:</strong> <span style="color: #7b2cbf;">${booking._id}</span></p>
-//             <p><strong>Seats:</strong> ${booking.bookedSeats?.join(', ') || 'N/A'}</p>
-
-//             <p>🎬 Enjoy the show and don’t forget to grab your popcorn!</p>
-//           </div>`
-//         })
-//     }
-// )
 
 // Inngest function to send reminders
 const sendShowReminders = inngest.createFunction(
